@@ -94,16 +94,70 @@ contract ETFHook is BaseHook {
     }
 
     function checkIfRebalanceNeeded() private returns (bool) {
-        // check chainlink if we need to rebalance (check if rebalanceThreshold is reached)
-        // return true if rebalance needed
-        uint256[2] memory prices = getPrices();
+    uint256[2] memory prices = getPrices();
+    
+    // Calculate current value of each token
+    uint256[2] memory tokenValues;
+    for (uint256 i = 0; i < 2; i++) {
+        tokenValues[i] = prices[i] * tokenBalances[i];
+    }
+    
+    // Calculate total portfolio value
+    uint256 totalValue = tokenValues[0] + tokenValues[1];
+    if (totalValue == 0) return false;
+    
+    // Calculate current weights (in basis points - 10000 = 100%)
+    uint256[2] memory currentWeights;
+    for (uint256 i = 0; i < 2; i++) {
+        currentWeights[i] = (tokenValues[i] * 10000) / totalValue;
+    }
+    
+    // Check if any weight deviates more than the threshold
+    for (uint256 i = 0; i < 2; i++) {
+        if (currentWeights[i] > weights[i]) {
+            if (currentWeights[i] - weights[i] > rebalanceThreshold) return true;
+        } else {
+            if (weights[i] - currentWeights[i] > rebalanceThreshold) return true;
+        }
+    }
+        
+        return false;
     }
 
     function rebalance() private {
-        // sell A & buy B through specified uniswap pool
+        uint256[2] memory prices = getPrices();
+        
+        // Calculate current value of each token
+        uint256[2] memory tokenValues;
+        for (uint256 i = 0; i < 2; i++) {
+            tokenValues[i] = prices[i] * tokenBalances[i];
+        }
+        
+        // Calculate total portfolio value
+        uint256 totalValue = tokenValues[0] + tokenValues[1];
+        if (totalValue == 0) return;
+        
+        // Calculate target values for each token
+        uint256[2] memory targetValues;
+        for (uint256 i = 0; i < 2; i++) {
+            targetValues[i] = (totalValue * weights[i]) / 10000;
+        }
+        
+        // Determine which token to sell and which to buy
+        if (tokenValues[0] > targetValues[0]) {
+            // Token 0 is overweight, sell token 0 for token 1
+            uint256 token0ToSell = (tokenValues[0] - targetValues[0]) / prices[0];
+            // Execute swap through Uniswap pool
+            // TODO: Implement swap logic using poolManager
+        } else {
+            // Token 1 is overweight, sell token 1 for token 0
+            uint256 token1ToSell = (tokenValues[1] - targetValues[1]) / prices[1];
+            // Execute swap through Uniswap pool
+            // TODO: Implement swap logic using poolManager
+        }
     }
 
-    function mintETFToken(uint256 eftAmount) private {
+    function mintETFToken(uint256 etfAmount) private {
         // transfer tokens to ETF pool contract
         // update token balances
         // mint ETF token to msg.sender
