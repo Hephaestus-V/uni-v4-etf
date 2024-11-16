@@ -9,8 +9,9 @@ import {PoolKey} from "v4-core/src/types/PoolKey.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/src/types/PoolId.sol";
 import {BalanceDelta} from "v4-core/src/types/BalanceDelta.sol";
 import {BeforeSwapDelta, BeforeSwapDeltaLibrary} from "v4-core/src/types/BeforeSwapDelta.sol";
+import {ETFManager} from "./EtfToken.sol";
 
-contract ETFHook is BaseHook {
+contract ETFHook is ETFManager, BaseHook {
     address[2] public tokens; // the underlying tokens will be stored in this hook contract
     uint256[2] public weights;
     uint256 public rebalanceThreshold;
@@ -22,7 +23,7 @@ contract ETFHook is BaseHook {
         address[2] memory _tokens, // only two tokens are supported for now
         uint256[2] memory _weights,
         uint256 _rebalanceThreshold
-    ) BaseHook(_poolManager) {
+    ) BaseHook(_poolManager) ETFManager("ETF Token", "ETF") { // TODO: name the ETF token as f"{token0.symbol} + {token1.symbol} ETF"
         tokens = _tokens;
         weights = _weights;
         rebalanceThreshold = _rebalanceThreshold;
